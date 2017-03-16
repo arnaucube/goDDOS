@@ -15,12 +15,33 @@ const (
 	CONN_HOST = "localhost"
 	CONN_PORT = "3333"
 	CONN_TYPE = "tcp"
+	sleeptime = 3000
 )
 
-func main() {
-
+func stablishConn() (conn net.Conn, err error) {
 	// connect to this socket
-	conn, _ := net.Dial(CONN_TYPE, CONN_HOST+":"+CONN_PORT)
+	conn, err = net.Dial(CONN_TYPE, CONN_HOST+":"+CONN_PORT)
+	return conn, err
+}
+func tryToConnect() (conn net.Conn, err error) {
+	fmt.Println("trying to connect to the server")
+	connected := false
+	conn, err = stablishConn()
+	for connected == false {
+		conn, err = stablishConn()
+		if err != nil {
+			fmt.Println(err)
+			fmt.Println("server not connected, sleep for " + strconv.Itoa(sleeptime) + " to try again")
+			time.Sleep(sleeptime * time.Millisecond)
+			//os.Exit(1)
+		} else {
+			connected = true
+		}
+	}
+	return conn, err
+}
+func main() {
+	conn, err := tryToConnect()
 	hostname, err := os.Hostname()
 	if err != nil {
 		fmt.Println(err)
@@ -36,7 +57,8 @@ func main() {
 		if err != nil {
 			fmt.Println(err)
 			fmt.Println("server disconnected")
-			os.Exit(1)
+			//os.Exit(1)
+			conn, err = tryToConnect()
 		}
 		fmt.Println("Command from server: " + command)
 		//fmt.Println(len(strings.Split(command, " ")))
