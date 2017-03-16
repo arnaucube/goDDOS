@@ -5,12 +5,19 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"time"
+)
+
+const (
+	CONN_HOST = "localhost"
+	CONN_PORT = "3333"
+	CONN_TYPE = "tcp"
 )
 
 func main() { //client https://systembash.com/a-simple-go-tcp-server-and-tcp-client/
 
 	// connect to this socket
-	conn, _ := net.Dial("tcp", "127.0.0.1:3333")
+	conn, _ := net.Dial(CONN_TYPE, CONN_HOST+":"+CONN_PORT)
 	hostname, err := os.Hostname()
 	if err != nil {
 		fmt.Println(err)
@@ -20,7 +27,7 @@ func main() { //client https://systembash.com/a-simple-go-tcp-server-and-tcp-cli
 	ip := getIp()
 	fmt.Println("local ip:", ip)
 	// send to socket
-	fmt.Fprintf(conn, hostname+", ip: "+ip.String()+"\n")
+	fmt.Fprintf(conn, "[client connecting] - [date]: "+time.Now().Local().Format(time.UnixDate)+" - [hostname]: "+hostname+", [ip]: "+ip.String()+"\n")
 	for {
 		message, err := bufio.NewReader(conn).ReadString('\n')
 		if err != nil {
